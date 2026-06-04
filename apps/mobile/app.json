@@ -1,0 +1,47 @@
+{
+  "expo": {
+    "name": "AutoDex",
+    "slug": "autodex",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0F0F0F"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "app.autodex",
+      "infoPlist": {
+        "NSCameraUsageDescription": "AutoDex necesita la cámara para verificar tus avistamientos de autos.",
+        "NSLocationWhenInUseUsageDescription": "AutoDex usa tu ubicación para registrar dónde viste el auto."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0F0F0F"
+      },
+      "package": "app.autodex",
+      "permissions": ["CAMERA", "ACCESS_FINE_LOCATION"]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      ["expo-camera", { "cameraPermission": "AutoDex necesita la cámara para verificar avistamientos." }],
+      ["expo-location", { "locationWhenInUsePermission": "AutoDex usa tu ubicación para el mapa de avistamientos." }]
+    ],
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "favicon": "./assets/icon.png"
+    },
+    "scheme": "autodex",
+    "extra": {
+      "eas": { "projectId": "your-eas-project-id" }
+    }
+  }
+}

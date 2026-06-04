@@ -1,0 +1,165 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String    @id @default(cuid())
+  clerkId      String    @unique
+  username     String    @unique
+  displayName  String
+  avatarUrl    String?
+  bio          String?
+  country      String    @default("CL")
+  totalPoints  Int       @default(0)
+  isPremium    Boolean   @default(false)
+  premiumUntil DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  interactions          Interaction[]
+  achievements          UserAchievement[]
+  following             Follow[]              @relation("follower")
+  followers             Follow[]              @relation("following")
+  dailyInteractions     DailyInteractionCount[]
+}
+
+model Brand {
+  id         String  @id @default(cuid())
+  name       String  @unique
+  slug       String  @unique
+  logoUrl    String?
+  country    String?
+  apiSource  String?
+  externalId String?
+
+  models CarModel[]
+}
+
+model CarModel {
+  id         String @id @default(cuid())
+  brandId    String
+  name       String
+  slug       String
+  type       String @default("OTHER") // CarType as String
+  apiSource  String?
+  externalId String?
+
+  brand    Brand        @relation(fields: [brandId], references: [id])
+  versions CarVersion[]
+
+  @@unique([brandId, slug])
+}
+
+model CarVersion {
+  id           String  @id @default(cuid())
+  modelId      String
+  year         Int
+  name         String
+  trim         String?
+  engine       String?
+  horsepower   Int?
+  torqueNm     Int?
+  transmission String?
+  drivetrain   String?
+  fuelType     String?
+  fuelCity     Float?
+  fuelHwy      Float?
+  doors        Int?
+  seats        Int?
+  weightKg     Int?
+  priceUSD     Int?
+  rarity       String  @default("COMMON") // Rarity as String
+  isLatam      Boolean @default(false)
+  apiSource    String?
+  externalId   String?
+
+  model        CarModel    @relation(fields: [modelId], references: [id])
+  images       CarImage[]
+  interactions Interaction[]
+}
+
+model CarImage {
+  id         String   @id @default(cuid())
+  versionId  String
+  url        String
+  thumbUrl   String
+  type       String   @default("EXTERIOR_FRONT") // ImageType as String
+  isPrimary  Boolean  @default(false)
+  uploadedBy String?
+  verified   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  version CarVersion @relation(fields: [versionId], references: [id])
+}
+
+model Interaction {
+  id        String   @id @default(cuid())
+  userId    String
+  versionId String
+  type      String   // InteractionType as String
+  points    Int
+  verified  Boolean  @default(false)
+  photoUrl  String?
+  photoHash String?
+  latitude  Float?
+  longitude Float?
+  note      String?
+  createdAt DateTime @default(now())
+
+  user    User       @relation(fields: [userId], references: [id])
+  version CarVersion @relation(fields: [versionId], references: [id])
+
+  @@unique([userId, versionId, type])
+  @@index([userId])
+  @@index([versionId])
+}
+
+model DailyInteractionCount {
+  id     String @id @default(cuid())
+  userId String
+  date   String
+  count  Int    @default(0)
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, date])
+}
+
+model Achievement {
+  id          String @id @default(cuid())
+  key         String @unique
+  name        String
+  description String
+  iconUrl     String
+  points      Int
+  condition   String // JSON serializado como String
+
+  users UserAchievement[]
+}
+
+model UserAchievement {
+  userId        String
+  achievementId String
+  unlockedAt    DateTime @default(now())
+
+  user        User        @relation(fields: [userId], references: [id])
+  achievement Achievement @relation(fields: [achievementId], references: [id])
+
+  @@id([userId, achievementId])
+}
+
+model Follow {
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+
+  follower  User @relation("follower",  fields: [followerId],  references: [id])
+  following User @relation("following", fields: [followingId], references: [id])
+
+  @@id([followerId, followingId])
+}
