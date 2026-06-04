@@ -18,6 +18,7 @@ const brands = [
   { name: 'Hyundai', slug: 'hyundai', country: 'KR' },
   { name: 'Kia', slug: 'kia', country: 'KR' },
   { name: 'Subaru', slug: 'subaru', country: 'JP' },
+  { name: 'Tesla', slug: 'tesla', country: 'US' },
 ]
 
 const seedCars = [
@@ -67,6 +68,39 @@ const seedCars = [
     brand: 'Porsche', model: '911', type: 'COUPE' as const,
     versions: [
       { year: 2024, name: 'Carrera 4S', trim: 'Carrera 4S', engine: '3.0L BiTurbo', horsepower: 450, torqueNm: 530, transmission: 'PDK 8v', drivetrain: 'AWD', fuelType: 'Gasolina', rarity: 'EPIC' as const, isLatam: false },
+    ]
+  },
+  {
+    brand: 'Tesla', model: 'Model 3', type: 'ELECTRIC' as const,
+    versions: [
+      { year: 2024, name: 'Rear-Wheel Drive', trim: 'RWD', engine: 'Motor eléctrico', horsepower: 283, torqueNm: 420, transmission: 'Reductora de una velocidad', drivetrain: 'RWD', fuelType: 'Eléctrico', rarity: 'UNCOMMON' as const, isLatam: true },
+      { year: 2024, name: 'Long Range AWD', trim: 'Long Range', engine: 'Doble motor eléctrico', horsepower: 498, torqueNm: 493, transmission: 'Reductora de una velocidad', drivetrain: 'AWD', fuelType: 'Eléctrico', rarity: 'RARE' as const, isLatam: true },
+    ]
+  },
+  {
+    brand: 'Hyundai', model: 'IONIQ 5', type: 'ELECTRIC' as const,
+    versions: [
+      { year: 2024, name: 'Long Range RWD', trim: 'Long Range', engine: 'Motor eléctrico', horsepower: 225, torqueNm: 350, transmission: 'Reductora de una velocidad', drivetrain: 'RWD', fuelType: 'Eléctrico', rarity: 'RARE' as const, isLatam: true },
+      { year: 2024, name: 'N AWD', trim: 'N', engine: 'Doble motor eléctrico', horsepower: 641, torqueNm: 740, transmission: 'Reductora de una velocidad', drivetrain: 'AWD', fuelType: 'Eléctrico', rarity: 'EPIC' as const, isLatam: false },
+    ]
+  },
+  {
+    brand: 'Kia', model: 'EV6', type: 'ELECTRIC' as const,
+    versions: [
+      { year: 2024, name: 'Long Range RWD', trim: 'Long Range', engine: 'Motor eléctrico', horsepower: 225, torqueNm: 350, transmission: 'Reductora de una velocidad', drivetrain: 'RWD', fuelType: 'Eléctrico', rarity: 'RARE' as const, isLatam: true },
+      { year: 2024, name: 'GT AWD', trim: 'GT', engine: 'Doble motor eléctrico', horsepower: 577, torqueNm: 740, transmission: 'Reductora de una velocidad', drivetrain: 'AWD', fuelType: 'Eléctrico', rarity: 'EPIC' as const, isLatam: false },
+    ]
+  },
+  {
+    brand: 'Nissan', model: 'Leaf', type: 'ELECTRIC' as const,
+    versions: [
+      { year: 2024, name: 'e+ 62 kWh', trim: 'e+', engine: 'Motor eléctrico', horsepower: 214, torqueNm: 340, transmission: 'Reductora de una velocidad', drivetrain: 'FWD', fuelType: 'Eléctrico', rarity: 'UNCOMMON' as const, isLatam: true },
+    ]
+  },
+  {
+    brand: 'BMW', model: 'i4', type: 'ELECTRIC' as const,
+    versions: [
+      { year: 2024, name: 'eDrive40', trim: 'eDrive40', engine: 'Motor eléctrico', horsepower: 335, torqueNm: 430, transmission: 'Reductora de una velocidad', drivetrain: 'RWD', fuelType: 'Eléctrico', rarity: 'RARE' as const, isLatam: true },
     ]
   },
 ]
