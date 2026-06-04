@@ -152,22 +152,7 @@ async function main() {
         update: {},
         create: { id: versionId, modelId: model.id, ...v },
       })
-      // Imagen placeholder para que la UI muestre algo visual
-      const existing = await prisma.carImage.findFirst({ where: { versionId } })
-      if (!existing) {
-        const label = encodeURIComponent(`${car.brand} ${car.model}`)
-        await prisma.carImage.create({
-          data: {
-            versionId,
-            url: `https://placehold.co/800x500/1A1A1A/E63946?text=${label}`,
-            thumbUrl: `https://placehold.co/400x250/1A1A1A/E63946?text=${label}`,
-            type: 'EXTERIOR_FRONT',
-            isPrimary: true,
-            uploadedBy: 'seed',
-            verified: true,
-          },
-        })
-      }
+      // Imágenes reales se cargan desde el panel de admin
     }
   }
   console.log(`✅ ${seedCars.length} models with versions`)
