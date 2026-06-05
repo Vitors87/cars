@@ -39,18 +39,31 @@ export async function GET() {
     where: { userId: user.id, verified: true },
   })
 
+  const totalInteractions = interactionStats.reduce(
+    (sum: number, stat: { _count: { type: number } }) => sum + stat._count.type,
+    0,
+  )
+
+  const uniqueBrandCount = new Set(
+    uniqueBrands.map(
+      (interaction: { version: { model: { brandId: string } } }) => interaction.version.model.brandId,
+    ),
+  ).size
+
   return NextResponse.json({
     ...user,
     stats: {
-      totalInteractions: interactionStats.reduce((sum, s) => sum + s._count.type, 0),
+      totalInteractions,
       uniqueCars: uniqueCars.length,
-      uniqueBrands: new Set(uniqueBrands.map((i) => i.version.model.brandId)).size,
+      uniqueBrands: uniqueBrandCount,
       verifiedCount,
     },
-    achievements: achievements.map((a) => ({
-      ...a.achievement,
-      unlockedAt: a.unlockedAt,
-    })),
+    achievements: achievements.map(
+      (userAchievement: { achievement: unknown; unlockedAt: Date }) => ({
+        ...(userAchievement.achievement as Record<string, unknown>),
+        unlockedAt: userAchievement.unlockedAt,
+      }),
+    ),
   })
 }
 
