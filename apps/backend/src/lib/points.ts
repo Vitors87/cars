@@ -4,6 +4,33 @@ import { prisma } from './prisma'
 
 export { calcPoints }
 
+type AchievementRecord = {
+  id: string
+  key: string
+  points: number
+  condition: string
+}
+
+type UserAchievementRecord = {
+  achievementId: string
+}
+
+type InteractionWithVehicle = {
+  versionId: string
+  type: InteractionType | string
+  verified: boolean
+  version: {
+    rarity: Rarity | string
+    model: {
+      brand: {
+        id: string
+        name: string
+        country: string | null
+      }
+    }
+  }
+}
+
 export async function checkDailyLimit(userId: string, isPremium: boolean): Promise<boolean> {
   if (isPremium) return true
 
@@ -32,7 +59,7 @@ export async function addPointsToUser(userId: string, points: number): Promise<v
 }
 
 export async function checkAchievements(userId: string): Promise<string[]> {
-  const [user, userInteractions, userAchievements] = await Promise.all([
+  const [user, userInteractionsRaw, userAchievementsRaw] = await Promise.all([
     prisma.user.findUnique({ where: { id: userId }, select: { totalPoints: true } }),
     prisma.interaction.findMany({
       where: { userId },
@@ -41,43 +68,45 @@ export async function checkAchievements(userId: string): Promise<string[]> {
     prisma.userAchievement.findMany({ where: { userId }, select: { achievementId: true } }),
   ])
 
-  const unlockedIds = new Set(userAchievements.map((a) => a.achievementId))
-  const allAchievements = await prisma.achievement.findMany()
+  const userInteractions = userInteractionsRaw as InteractionWithVehicle[]
+  const userAchievements = userAchievementsRaw as UserAchievementRecord[]
+  const unlockedIds = new Set(userAchievements.map((achievement) => achievement.achievementId))
+  const allAchievements = (await prisma.achievement.findMany()) as AchievementRecord[]
   const newlyUnlocked: string[] = []
 
-  for (const ach of allAchievements) {
-    if (unlockedIds.has(ach.id)) continue
+  for (const achievement of allAchievements) {
+    if (unlockedIds.has(achievement.id)) continue
 
-    const cond = JSON.parse(ach.condition as string) as Record<string, unknown>
+    const condition = JSON.parse(achievement.condition) as Record<string, unknown>
     let unlocked = false
 
-    if (cond.type === 'total_interactions') {
-      unlocked = userInteractions.length >= (cond.count as number)
-    } else if (cond.type === 'unique_cars') {
-      const unique = new Set(userInteractions.map((i) => i.versionId))
-      unlocked = unique.size >= (cond.count as number)
-    } else if (cond.type === 'unique_brands') {
-      const unique = new Set(userInteractions.map((i) => i.version.model.brand.id))
-      unlocked = unique.size >= (cond.count as number)
-    } else if (cond.type === 'brand_interaction') {
-      unlocked = userInteractions.some((i) => i.version.model.brand.name === cond.brand)
-    } else if (cond.type === 'interaction_type') {
-      unlocked = userInteractions.filter((i) => i.type === cond.interactionType).length >= (cond.count as number)
-    } else if (cond.type === 'verified_count') {
-      unlocked = userInteractions.filter((i) => i.verified).length >= (cond.count as number)
-    } else if (cond.type === 'rarity_interaction') {
-      unlocked = userInteractions.some((i) => i.version.rarity === cond.rarity)
-    } else if (cond.type === 'total_points') {
-      unlocked = (user?.totalPoints ?? 0) >= (cond.points as number)
-    } else if (cond.type === 'brand_country') {
-      const count = userInteractions.filter((i) => i.version.model.brand.country === cond.country).length
-      unlocked = count >= (cond.count as number)
+    if (condition.type === 'total_interactions') {
+      unlocked = userInteractions.length >= (condition.count as number)
+    } else if (condition.type === 'unique_cars') {
+      const unique = new Set(userInteractions.map((interaction) => interaction.versionId))
+      unlocked = unique.size >= (condition.count as number)
+    } else if (condition.type === 'unique_brands') {
+      const unique = new Set(userInteractions.map((interaction) => interaction.version.model.brand.id))
+      unlocked = unique.size >= (condition.count as number)
+    } else if (condition.type === 'brand_interaction') {
+      unlocked = userInteractions.some((interaction) => interaction.version.model.brand.name === condition.brand)
+    } else if (condition.type === 'interaction_type') {
+      unlocked = userInteractions.filter((interaction) => interaction.type === condition.interactionType).length >= (condition.count as number)
+    } else if (condition.type === 'verified_count') {
+      unlocked = userInteractions.filter((interaction) => interaction.verified).length >= (condition.count as number)
+    } else if (condition.type === 'rarity_interaction') {
+      unlocked = userInteractions.some((interaction) => interaction.version.rarity === condition.rarity)
+    } else if (condition.type === 'total_points') {
+      unlocked = (user?.totalPoints ?? 0) >= (condition.points as number)
+    } else if (condition.type === 'brand_country') {
+      const count = userInteractions.filter((interaction) => interaction.version.model.brand.country === condition.country).length
+      unlocked = count >= (condition.count as number)
     }
 
     if (unlocked) {
-      await prisma.userAchievement.create({ data: { userId, achievementId: ach.id } })
-      await addPointsToUser(userId, ach.points)
-      newlyUnlocked.push(ach.key)
+      await prisma.userAchievement.create({ data: { userId, achievementId: achievement.id } })
+      await addPointsToUser(userId, achievement.points)
+      newlyUnlocked.push(achievement.key)
     }
   }
 
