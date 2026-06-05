@@ -2,9 +2,19 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getOrCreateUser } from '@/lib/auth'
 
+type RankingUser = {
+  id: string
+  username: string
+  displayName: string
+  avatarUrl: string | null
+  country: string
+  totalPoints: number
+  _count: { interactions: number }
+}
+
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl
-  const scope = searchParams.get('scope') ?? 'global'   // global | country
+  const scope = searchParams.get('scope') ?? 'global'
   const country = searchParams.get('country')
   const limit = Math.min(Number(searchParams.get('limit') ?? 50), 100)
 
@@ -16,7 +26,7 @@ export async function GET(req: NextRequest) {
 
   const where = scope === 'country' && country ? { country } : {}
 
-  const users = await prisma.user.findMany({
+  const users = (await prisma.user.findMany({
     where,
     orderBy: { totalPoints: 'desc' },
     take: limit,
@@ -29,17 +39,23 @@ export async function GET(req: NextRequest) {
       totalPoints: true,
       _count: { select: { interactions: true } },
     },
-  })
+  })) as RankingUser[]
 
-  const ranking = users.map((u, i) => ({
-    rank: i + 1,
-    user: { id: u.id, username: u.username, displayName: u.displayName, avatarUrl: u.avatarUrl, country: u.country },
-    totalPoints: u.totalPoints,
-    totalInteractions: u._count.interactions,
+  const ranking = users.map((rankingUser: RankingUser, index: number) => ({
+    rank: index + 1,
+    user: {
+      id: rankingUser.id,
+      username: rankingUser.username,
+      displayName: rankingUser.displayName,
+      avatarUrl: rankingUser.avatarUrl,
+      country: rankingUser.country,
+    },
+    totalPoints: rankingUser.totalPoints,
+    totalInteractions: rankingUser._count.interactions,
   }))
 
   const myRank = user
-    ? ranking.findIndex((r) => r.user.id === user.id) + 1
+    ? ranking.findIndex((entry: { user: { id: string } }) => entry.user.id === user.id) + 1
     : null
 
   return NextResponse.json({ ranking, myRank: myRank || null })
