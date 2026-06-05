@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { getOrCreateUser } from '@/lib/auth'
 
@@ -15,24 +16,24 @@ export async function GET(req: NextRequest) {
 
   const user = await getOrCreateUser()
 
-  const where = {
-    ...(rarity && { rarity: rarity as never }),
+  const where: Prisma.CarVersionWhereInput = {
+    ...(rarity && { rarity }),
     ...(year && { year: Number(year) }),
     ...(isLatam === 'true' && { isLatam: true }),
     model: {
-      ...(type && { type: type as never }),
+      ...(type && { type }),
       brand: {
         ...(brand && { slug: brand }),
         ...(search && {
-          name: { contains: search, mode: 'insensitive' as const },
+          name: { contains: search },
         }),
       },
     },
     ...(search && !brand && {
       OR: [
-        { model: { name: { contains: search, mode: 'insensitive' as const } } },
-        { model: { brand: { name: { contains: search, mode: 'insensitive' as const } } } },
-        { name: { contains: search, mode: 'insensitive' as const } },
+        { model: { name: { contains: search } } },
+        { model: { brand: { name: { contains: search } } } },
+        { name: { contains: search } },
       ],
     }),
   }
@@ -52,21 +53,23 @@ export async function GET(req: NextRequest) {
     prisma.carVersion.count({ where }),
   ])
 
+  const versionIds = data.map((car) => car.id)
+
   const userInteractions = user
     ? await prisma.interaction.findMany({
-        where: { userId: user.id, versionId: { in: data.map((c) => c.id) } },
+        where: { userId: user.id, versionId: { in: versionIds } },
         select: { versionId: true, type: true },
       })
     : []
 
-  const interactionMap = new Map(userInteractions.map((i) => [i.versionId, i.type]))
+  const interactionMap = new Map(userInteractions.map((interaction) => [interaction.versionId, interaction.type]))
 
   return NextResponse.json({
-    data: data.map((v) => ({
-      ...v,
-      primaryImage: v.images[0] ?? null,
+    data: data.map((version) => ({
+      ...version,
+      primaryImage: version.images[0] ?? null,
       images: undefined,
-      userInteraction: interactionMap.get(v.id) ?? null,
+      userInteraction: interactionMap.get(version.id) ?? null,
     })),
     total,
     page,
