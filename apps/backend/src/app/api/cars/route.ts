@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { getOrCreateUser } from '@/lib/auth'
 
@@ -16,7 +15,7 @@ export async function GET(req: NextRequest) {
 
   const user = await getOrCreateUser()
 
-  const where: Prisma.CarVersionWhereInput = {
+  const where = {
     ...(rarity && { rarity }),
     ...(year && { year: Number(year) }),
     ...(isLatam === 'true' && { isLatam: true }),
@@ -53,7 +52,7 @@ export async function GET(req: NextRequest) {
     prisma.carVersion.count({ where }),
   ])
 
-  const versionIds = data.map((car) => car.id)
+  const versionIds = data.map((car: { id: string }) => car.id)
 
   const userInteractions = user
     ? await prisma.interaction.findMany({
@@ -62,10 +61,12 @@ export async function GET(req: NextRequest) {
       })
     : []
 
-  const interactionMap = new Map(userInteractions.map((interaction) => [interaction.versionId, interaction.type]))
+  const interactionMap = new Map(
+    userInteractions.map((interaction: { versionId: string; type: string }) => [interaction.versionId, interaction.type])
+  )
 
   return NextResponse.json({
-    data: data.map((version) => ({
+    data: data.map((version: any) => ({
       ...version,
       primaryImage: version.images[0] ?? null,
       images: undefined,
