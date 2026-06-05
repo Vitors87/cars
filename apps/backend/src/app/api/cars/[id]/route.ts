@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getOrCreateUser } from '@/lib/auth'
 import { FREE_TIER_MAX_IMAGES } from '@autodex/shared'
+import type { InteractionType, InteractionCounts } from '@autodex/shared'
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   const user = await getOrCreateUser()
@@ -25,8 +26,11 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     _count: { type: true },
   })
 
-  const counts = { WANT: 0, SAW: 0, RODE: 0, DROVE: 0, OWNED: 0 }
-  for (const c of interactionCounts) counts[c.type] = c._count.type
+  const counts: InteractionCounts = { WANT: 0, SAW: 0, RODE: 0, DROVE: 0, OWNED: 0 }
+  for (const c of interactionCounts) {
+    const type = c.type as InteractionType
+    counts[type] = c._count.type
+  }
 
   const userInteraction = user
     ? await prisma.interaction.findMany({
