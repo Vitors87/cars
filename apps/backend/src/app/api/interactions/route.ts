@@ -4,15 +4,27 @@ import { prisma } from '@/lib/prisma'
 import { requireUser } from '@/lib/auth'
 import { calcPoints, checkDailyLimit, incrementDailyCount, addPointsToUser, checkAchievements } from '@/lib/points'
 import { uploadImage } from '@/lib/r2'
+import type { InteractionType, Rarity } from '@autodex/shared'
+
+const interactionTypes = ['WANT', 'SAW', 'RODE', 'DROVE', 'OWNED'] as const
+const rarities = ['COMMON', 'UNCOMMON', 'RARE', 'EPIC', 'LEGENDARY'] as const
 
 const schema = z.object({
   versionId: z.string(),
-  type: z.enum(['WANT', 'SAW', 'RODE', 'DROVE', 'OWNED']),
+  type: z.enum(interactionTypes),
   photoBase64: z.string().optional(),
   latitude: z.number().optional(),
   longitude: z.number().optional(),
   note: z.string().max(200).optional(),
 })
+
+function isRarity(value: string): value is Rarity {
+  return (rarities as readonly string[]).includes(value)
+}
+
+function isInteractionType(value: string): value is InteractionType {
+  return (interactionTypes as readonly string[]).includes(value)
+}
 
 export async function POST(req: NextRequest) {
   let user
@@ -34,12 +46,15 @@ export async function POST(req: NextRequest) {
   if (!withinLimit) {
     return NextResponse.json(
       { error: 'Límite diario alcanzado. Actualiza a Premium para interacciones ilimitadas.', code: 'DAILY_LIMIT' },
-      { status: 429 }
+      { status: 429 },
     )
   }
 
   const version = await prisma.carVersion.findUnique({ where: { id: versionId } })
   if (!version) return NextResponse.json({ error: 'Auto no encontrado' }, { status: 404 })
+  if (!isRarity(version.rarity)) {
+    return NextResponse.json({ error: 'Rareza de vehículo inválida' }, { status: 500 })
+  }
 
   const existing = await prisma.interaction.findUnique({
     where: { userId_versionId_type: { userId: user.id, versionId, type } },
@@ -59,8 +74,8 @@ export async function POST(req: NextRequest) {
       photoUrl = uploaded.url
       photoHash = uploaded.hash
       verified = true
-    } catch (e) {
-      console.error('Upload failed:', e)
+    } catch (error) {
+      console.error('Upload failed:', error)
     }
   }
 
@@ -109,7 +124,7 @@ export async function GET(req: NextRequest) {
 
   const where = {
     userId: user.id,
-    ...(type && { type: type as never }),
+    ...(type && isInteractionType(type) ? { type } : {}),
   }
 
   const [data, total] = await Promise.all([
