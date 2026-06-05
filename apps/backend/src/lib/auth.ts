@@ -1,5 +1,19 @@
-import type { User } from '@prisma/client'
 import { prisma } from './prisma'
+
+type AppUser = {
+  id: string
+  clerkId: string
+  username: string
+  displayName: string
+  avatarUrl: string | null
+  bio: string | null
+  country: string
+  totalPoints: number
+  isPremium: boolean
+  premiumUntil: Date | null
+  createdAt: Date
+  updatedAt: Date
+}
 
 const DEV_USER = {
   clerkId: 'dev-user-001',
@@ -9,20 +23,19 @@ const DEV_USER = {
   country: 'CL',
 }
 
-async function getDevUser(): Promise<User> {
+async function getDevUser(): Promise<AppUser> {
   return prisma.user.upsert({
     where: { clerkId: DEV_USER.clerkId },
     update: {},
     create: DEV_USER,
-  })
+  }) as Promise<AppUser>
 }
 
-export async function getOrCreateUser(): Promise<User | null> {
-  // TODO producción: validar JWT de Clerk aquí
+export async function getOrCreateUser(): Promise<AppUser | null> {
   return getDevUser()
 }
 
-export async function requireUser(): Promise<User> {
+export async function requireUser(): Promise<AppUser> {
   const user = await getOrCreateUser()
   if (!user) throw Object.assign(new Error('No autorizado'), { code: 'UNAUTHORIZED' })
   return user
